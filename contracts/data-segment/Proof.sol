@@ -9,7 +9,7 @@ import {Cid} from "./Cid.sol";
 import {ProofData, InclusionProof, InclusionVerifierData, InclusionAuxData, SegmentDesc, Fr32} from "./ProofTypes.sol";
 import {MarketAPI} from "@zondax/filecoin-solidity/contracts/v0.8/MarketAPI.sol";
 import {MarketTypes} from "@zondax/filecoin-solidity/contracts/v0.8/types/MarketTypes.sol";
-
+import {CommonTypes} from "@zondax/filecoin-solidity/contracts/v0.8/types/CommonTypes.sol";
 contract Proof {
     using Cid for bytes;
     using Cid for bytes32;
@@ -60,7 +60,7 @@ contract Proof {
         uint64 dealId,
         InclusionProof memory ip,
         InclusionVerifierData memory verifierData
-    ) internal returns (InclusionAuxData memory) {
+    ) internal view returns (InclusionAuxData memory) {
         InclusionAuxData memory inclusionAuxData = computeExpectedAuxData(ip, verifierData);
         validateInclusionAuxData(dealId, inclusionAuxData);
         return inclusionAuxData;
@@ -70,13 +70,13 @@ contract Proof {
     function validateInclusionAuxData(
         uint64 dealId,
         InclusionAuxData memory inclusionAuxData
-    ) internal {
+    ) internal view {
         // check that the deal is not terminated
         MarketTypes.GetDealActivationReturn memory dealActivation = MarketAPI.getDealActivation(
             dealId
         );
-        require(dealActivation.terminated <= 0, "Deal is terminated");
-        require(dealActivation.activated > 0, "Deal is not activated");
+        require(CommonTypes.ChainEpoch.unwrap(dealActivation.terminated) <= 0, "Deal is terminated");
+        require(CommonTypes.ChainEpoch.unwrap(dealActivation.activated )> 0, "Deal is not activated");
 
         MarketTypes.GetDealDataCommitmentReturn memory dealDataCommitment = MarketAPI
             .getDealDataCommitment(dealId);

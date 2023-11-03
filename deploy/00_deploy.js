@@ -9,15 +9,20 @@ const wallet = new ethers.Wallet(private_key, ethers.provider)
 module.exports = async ({ deployments }) => {
     // ethers is available in the global scope
     const [deployer] = await ethers.getSigners()
-    console.log("Deploying the contracts with the account:", await deployer.getAddress())
+    console.log(
+        "Deploying the contracts with the account:",
+        await deployer.getAddress(),
+        "on network",
+        network.name
+    )
 
     console.log("Account balance:", (await deployer.getBalance()).toString())
 
     const accounts = await ethers.getSigners()
-    console.log(accounts[0])
+    // console.log(accounts[0])
 
     console.log("Wallet Ethereum Address:", wallet.address)
-    const chainId = network.config.chainId
+    // const chainId = network.config.chainId
 
     // //deploy DealStatus
     // const Cid = await ethers.getContractFactory('Cid', accounts[0]);
