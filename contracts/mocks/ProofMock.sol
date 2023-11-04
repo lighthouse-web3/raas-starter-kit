@@ -16,7 +16,7 @@ import {
 } from "../data-segment/ProofTypes.sol";
 import {MarketAPI} from "./MarketAPIMock.sol";
 import {MarketTypes} from "@zondax/filecoin-solidity/contracts/v0.8/types/MarketTypes.sol";
-
+import {CommonTypes} from "@zondax/filecoin-solidity/contracts/v0.8/types/CommonTypes.sol";
 contract ProofMock {
     using Cid for bytes;
     using Cid for bytes32;
@@ -67,8 +67,8 @@ contract ProofMock {
     function validateInclusionAuxData(uint64 dealId, InclusionAuxData memory inclusionAuxData) internal {
         // check that the deal is not terminated
         MarketTypes.GetDealActivationReturn memory dealActivation = MarketAPI.getDealActivation(dealId);
-        require(dealActivation.terminated <= 0, "Deal is terminated");
-        require(dealActivation.activated > 0, "Deal is not activated");
+        require(CommonTypes.ChainEpoch.unwrap(dealActivation.terminated) <= 0, "Deal is terminated");
+        require(CommonTypes.ChainEpoch.unwrap(dealActivation.activated) > 0, "Deal is not activated");
 
         MarketTypes.GetDealDataCommitmentReturn memory dealDataCommitment = MarketAPI.getDealDataCommitment(dealId);
         require(keccak256(dealDataCommitment.data) == keccak256(inclusionAuxData.commPa), "Deal commD doesn't match");

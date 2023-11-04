@@ -93,7 +93,7 @@ contract DealStatusMock is IAggregatorOracle, ProofMock {
             // get the deal's expiration epoch
             MarketTypes.GetDealActivationReturn memory dealActivationStatus = MarketAPI.getDealActivation(dealID);
 
-            if (dealActivationStatus.terminated > 0 || dealActivationStatus.activated == -1) {
+            if (CommonTypes.ChainEpoch.unwrap(dealActivationStatus.terminated) > 0 || CommonTypes.ChainEpoch.unwrap(dealActivationStatus.activated) == -1) {
                 delete activeDealIds[i];
             }
         }
@@ -113,7 +113,7 @@ contract DealStatusMock is IAggregatorOracle, ProofMock {
             // get the deal's expiration epoch
             MarketTypes.GetDealTermReturn memory dealTerm = MarketAPI.getDealTerm(dealId);
 
-            if (block.number < uint64(dealTerm.end) - epochs || block.number > uint64(dealTerm.end)) {
+            if (block.number < uint64(CommonTypes.ChainEpoch.unwrap(dealTerm.end)) - epochs || block.number > uint64(CommonTypes.ChainEpoch.unwrap(dealTerm.end))) {
                 delete expiringDealIds[i];
             }
         }
