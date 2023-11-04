@@ -16,9 +16,9 @@ contract DealStatus is IAggregatorOracle, Proof {
     // State Variables
     ///////////////////
 
-    uint256 private s_transactionId;
-    mapping(uint256 => bytes) private s_txIdToCid;
-    mapping(bytes => Deal[]) private s_cidToDeals;
+    uint256 private transactionId;
+    mapping(uint256 => bytes) private txIdToCid;
+    mapping(bytes => Deal[]) private cidToDeals;
 
     ///////////////////
     // Functions
@@ -26,7 +26,7 @@ contract DealStatus is IAggregatorOracle, Proof {
 
     //constructor
     constructor() {
-        s_transactionId = 0;
+        transactionId = 0;
     }
 
     // external functions
@@ -40,14 +40,14 @@ contract DealStatus is IAggregatorOracle, Proof {
 
     function submit(bytes memory _cid) external returns (uint256) {
         // Increment the transaction ID
-        s_transactionId++;
+        transactionId++;
 
         // Save _cid
-        s_txIdToCid[s_transactionId] = _cid;
+        txIdToCid[transactionId] = _cid;
 
         // Emit the event
-        emit SubmitAggregatorRequest(s_transactionId, _cid);
-        return s_transactionId;
+        emit SubmitAggregatorRequest(transactionId, _cid);
+        return transactionId;
     }
 
     /**
@@ -67,20 +67,20 @@ contract DealStatus is IAggregatorOracle, Proof {
         uint256 _renew_threshold
     ) external returns (uint256) {
         // Increment the transaction ID
-        s_transactionId++;
+        transactionId++;
 
         // Save _cid
-        s_txIdToCid[s_transactionId] = _cid;
+        txIdToCid[transactionId] = _cid;
 
         // Emit the event
         emit SubmitAggregatorRequestWithRaaS(
-            s_transactionId,
+            transactionId,
             _cid,
             _replication_target,
             _repair_threshold,
             _renew_threshold
         );
-        return s_transactionId;
+        return transactionId;
     }
 
     /**
@@ -101,20 +101,20 @@ contract DealStatus is IAggregatorOracle, Proof {
         InclusionProof memory _proof,
         InclusionVerifierData memory _verifierData
     ) external returns (InclusionAuxData memory) {
-        require(_id <= s_transactionId, "Delta.complete: invalid tx id");
+        require(_id <= transactionId, "Delta.complete: invalid tx id");
         // Emit the event
         emit CompleteAggregatorRequest(_id, _dealId);
 
         // save the _dealId if it is not already saved
-        bytes memory cid = s_txIdToCid[_id];
-        for (uint256 i = 0; i < s_cidToDeals[cid].length; i++) {
-            if (s_cidToDeals[cid][i].dealId == _dealId) {
+        bytes memory cid = txIdToCid[_id];
+        for (uint256 i = 0; i < cidToDeals[cid].length; i++) {
+            if (cidToDeals[cid][i].dealId == _dealId) {
                 return computeExpectedAuxData(_proof, _verifierData);
             }
         }
 
         Deal memory deal = Deal(_dealId, _minerId);
-        s_cidToDeals[cid].push(deal);
+        cidToDeals[cid].push(deal);
 
         // Perform validation logic
         // return this.computeExpectedAuxDataWithDeal(_dealId, _proof, _verifierData);
@@ -223,7 +223,7 @@ contract DealStatus is IAggregatorOracle, Proof {
      */
 
     function getAllDeals(bytes memory _cid) external view returns (Deal[] memory) {
-        return s_cidToDeals[_cid];
+        return cidToDeals[_cid];
     }
 
     /**
@@ -233,9 +233,9 @@ contract DealStatus is IAggregatorOracle, Proof {
      */
 
     function getAllCIDs() external view returns (bytes[] memory) {
-        bytes[] memory cids = new bytes[](s_transactionId);
-        for (uint256 i = 0; i < s_transactionId; i++) {
-            cids[i] = s_txIdToCid[i + 1];
+        bytes[] memory cids = new bytes[](transactionId);
+        for (uint256 i = 0; i < transactionId; i++) {
+            cids[i] = txIdToCid[i + 1];
         }
         return cids;
     }
