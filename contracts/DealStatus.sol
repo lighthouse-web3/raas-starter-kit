@@ -168,8 +168,11 @@ contract DealStatus is IAggregatorOracle, Proof {
         for (uint256 i = 0; i < expiringDealIds.length; i++) {
             uint64 dealId = expiringDealIds[i].dealId;
             // get the deal's expiration epoch
-            (, int64 endEpoch) = this.getDealTermData(dealId);
-            if (block.number < uint64(endEpoch) - epochs) {
+            (int64 startEpoch, int64 duration) = this.getDealTermData(dealId);
+            if (
+                (block.number + epochs < uint64(startEpoch) + uint64(duration)) ||
+                (block.number > uint64(startEpoch) + uint64(duration))
+            ) {
                 delete expiringDealIds[i];
             }
         }
