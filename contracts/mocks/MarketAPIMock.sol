@@ -70,7 +70,7 @@ library MarketAPI {
     /// @notice Get the start epoch and duration(in epochs) of a deal proposal.
     /// @return the start epoch and duration (in epochs) of a deal proposal.
     function getDealTerm(uint64 dealID) internal pure returns (MarketTypes.GetDealTermReturn memory) {
-        return MarketTypes.GetDealTermReturn({start: 0, end: 1000});
+        return MarketTypes.GetDealTermReturn({start: CommonTypes.ChainEpoch.wrap(0), end: CommonTypes.ChainEpoch.wrap(1000)});
     }
 
     /// @notice get the total price that will be paid from the client to the provider for this deal.
@@ -94,7 +94,7 @@ library MarketAPI {
     /// @notice This will be available from when the proposal is published until an undefined period after the deal finishes (either normally or by termination).
     /// @return USR_NOT_FOUND if the deal doesn't exist (yet), or EX_DEAL_EXPIRED if the deal has been removed from state.
     function getDealActivation(uint64 dealID) internal pure returns (MarketTypes.GetDealActivationReturn memory) {
-        return MarketTypes.GetDealActivationReturn({activated: 0, terminated: -1});
+        return MarketTypes.GetDealActivationReturn({activated: CommonTypes.ChainEpoch.wrap(0), terminated: CommonTypes.ChainEpoch.wrap(-1)});
     }
 
     /// @notice Publish a new set of storage deals (not yet included in a sector).

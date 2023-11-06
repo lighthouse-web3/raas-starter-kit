@@ -34,9 +34,9 @@ contract DealStatusMock is IAggregatorOracle, ProofMock {
 
     function submitRaaS(
         bytes memory _cid,
-		uint256 _replication_target,
+        uint256 _replication_target,
         uint256 _repair_threshold,
-		uint256 _renew_threshold
+        uint256 _renew_threshold
     ) external returns (uint256) {
         // Increment the transaction ID
         transactionId++;
@@ -45,7 +45,13 @@ contract DealStatusMock is IAggregatorOracle, ProofMock {
         txIdToCid[transactionId] = _cid;
 
         // Emit the event
-        emit SubmitAggregatorRequestWithRaaS(transactionId, _cid, _replication_target, _repair_threshold, _renew_threshold);
+        emit SubmitAggregatorRequestWithRaaS(
+            transactionId,
+            _cid,
+            _replication_target,
+            _repair_threshold,
+            _renew_threshold
+        );
         return transactionId;
     }
 
@@ -83,7 +89,7 @@ contract DealStatusMock is IAggregatorOracle, ProofMock {
     }
 
     // getActiveDeals should return all the _cid's active dealIds
-    function getActiveDeals(bytes memory _cid) external returns (Deal[] memory) {
+    function getActiveDeals(bytes memory _cid) external view returns (Deal[] memory) {
         // get all the deal ids for the cid
         Deal[] memory activeDealIds;
         activeDealIds = this.getAllDeals(_cid);
@@ -91,9 +97,13 @@ contract DealStatusMock is IAggregatorOracle, ProofMock {
         for (uint256 i = 0; i < activeDealIds.length; i++) {
             uint64 dealID = activeDealIds[i].dealId;
             // get the deal's expiration epoch
-            MarketTypes.GetDealActivationReturn memory dealActivationStatus = MarketAPI.getDealActivation(dealID);
+            MarketTypes.GetDealActivationReturn memory dealActivationStatus = MarketAPI
+                .getDealActivation(dealID);
 
-            if (dealActivationStatus.terminated > 0 || dealActivationStatus.activated == -1) {
+            if (
+                CommonTypes.ChainEpoch.unwrap(dealActivationStatus.terminated) > 0 ||
+                CommonTypes.ChainEpoch.unwrap(dealActivationStatus.activated) == -1
+            ) {
                 delete activeDealIds[i];
             }
         }
@@ -102,7 +112,10 @@ contract DealStatusMock is IAggregatorOracle, ProofMock {
     }
 
     // getExpiringDeals should return all the deals' dealIds if they are expiring within `epochs`
-    function getExpiringDeals(bytes memory _cid,uint64 epochs) external view returns (Deal[] memory) {
+    function getExpiringDeals(
+        bytes memory _cid,
+        uint64 epochs
+    ) external view returns (Deal[] memory) {
         // the logic is similar to the above, but use this api call:
         // https://github.com/Zondax/filecoin-solidity/blob/master/contracts/v0.8/MarketAPI.sol#LL110C9-L110C9
         Deal[] memory expiringDealIds;
@@ -113,7 +126,14 @@ contract DealStatusMock is IAggregatorOracle, ProofMock {
             // get the deal's expiration epoch
             MarketTypes.GetDealTermReturn memory dealTerm = MarketAPI.getDealTerm(dealId);
 
-            if (block.number < uint64(dealTerm.end) - epochs || block.number > uint64(dealTerm.end)) {
+            if (
+                (block.number + epochs <
+                    uint64(CommonTypes.ChainEpoch.unwrap(dealTerm.start)) +
+                        uint64(CommonTypes.ChainEpoch.unwrap(dealTerm.end))) ||
+                (block.number >
+                    uint64(CommonTypes.ChainEpoch.unwrap(dealTerm.start)) +
+                        uint64(CommonTypes.ChainEpoch.unwrap(dealTerm.end)))
+            ) {
                 delete expiringDealIds[i];
             }
         }
