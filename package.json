@@ -40,6 +40,8 @@
     "webpack": "^5.89.0"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.476.0",
+    "@aws-sdk/util-dynamodb": "^3.476.0",
     "@glif/filecoin-address": "^2.0.18",
     "@lighthouse-web3/sdk": "^0.2.7",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.0",

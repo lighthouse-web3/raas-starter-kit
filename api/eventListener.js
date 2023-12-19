@@ -17,6 +17,7 @@ const contractInstance = "0x16c74b630d8c28bfa0f353cf19c5b114407a8051" // The use
 const LighthouseAggregator = require("./lighthouseAggregator.js")
 const upload = multer({ dest: "temp/" }) // Temporary directory for uploads
 const { executeRenewalJobs, executeRepairJobs } = require("./repairAndRenewal.js")
+const { getIncompleteCidRecords } = require("./db-operations/raas-jobs")
 // let stateFilePath = "./cache/service_state.json"
 
 // let storedNodeJobs
@@ -37,13 +38,19 @@ app.listen(port, () => {
     // console.log("Existing jobs on service node: ", storedNodeJobs)
     setInterval(async () => {
         console.log("checking for deals")
-        lighthouseAggregatorInstance.aggregatorJobs.forEach(async (job) => {
-            lighthouseAggregatorInstance.processDealInfos(job.lighthouse_cid, job.txID)
+        const incompleteCidRecords = await getIncompleteCidRecords()
+        incompleteCidRecords.forEach(async (job) => {
+            lighthouseAggregatorInstance.processDealInfos(
+                job.cid,
+                job.transactionId,
+                job.currentReplications,
+                job.replicationTarget
+            )
         })
 
         setTimeout(async () => {
             console.log("Executing jobs")
-            await executeRenewalJobs(lighthouseAggregatorInstance)
+            await executeRenewalJobs()
         }, 5000) // 5000 milliseconds = 5 seconds
     }, 10000) // 10000 milliseconds = 10 seconds
 

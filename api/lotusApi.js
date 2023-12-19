@@ -51,6 +51,8 @@ async function getBlockNumber() {
     }
 }
 
-// getDealInfo(147142)
+// getMinerActiveSectors("f01889668")
+
+// getDealInfo(66000000)
 // getBlockNumber()
 module.exports = { getDealInfo, getBlockNumber }
