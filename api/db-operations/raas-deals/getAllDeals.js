@@ -2,6 +2,7 @@ const { ScanCommand } = require("@aws-sdk/client-dynamodb")
 const { DealRecord } = require("../utils/constants")
 const client = require("../ddbClient")
 const { unmarshall } = require("@aws-sdk/util-dynamodb")
+const logger = require("../../winston")
 const getAllDeals = async () => {
     try {
         const params = {
@@ -9,14 +10,15 @@ const getAllDeals = async () => {
         }
         const command = new ScanCommand(params)
         const response = await client.send(command)
-        console.log(response)
+        // console.log(response)
         const unmarshalledItems = response.Items.map((item) => unmarshall(item))
-        console.log(unmarshalledItems)
+        // console.log(unmarshalledItems)
+        logger.info("Recieved all deals")
         return unmarshalledItems
     } catch (error) {
         console.log(error)
         throw new Error()
     }
 }
-getAllDeals()
+// getAllDeals()
 module.exports = getAllDeals

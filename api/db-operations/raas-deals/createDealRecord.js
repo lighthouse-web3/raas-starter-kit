@@ -1,7 +1,7 @@
 const client = require("../ddbClient")
 const { DealRecord } = require("../utils/constants")
 const { marshall } = require("@aws-sdk/util-dynamodb")
-
+const logger = require("../../winston")
 const { PutItemCommand } = require("@aws-sdk/client-dynamodb")
 
 const createDeal = async (record) => {
@@ -14,7 +14,7 @@ const createDeal = async (record) => {
         }
         const command = new PutItemCommand(params)
         const response = await client.send(command)
-        console.log(response)
+        logger.info("Created DealId ", record.dealId)
         return "Put Successful"
     } catch (error) {
         console.log(error)

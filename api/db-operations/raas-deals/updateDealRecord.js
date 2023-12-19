@@ -2,7 +2,7 @@ const { UpdateItemCommand } = require("@aws-sdk/client-dynamodb")
 const { DealRecord } = require("../utils/constants")
 const client = require("../ddbClient")
 const { marshall } = require("@aws-sdk/util-dynamodb")
-
+const logger = require("../../winston")
 const updateCidInDeal = async (dealId, newCid) => {
     try {
         const params = {
@@ -19,7 +19,7 @@ const updateCidInDeal = async (dealId, newCid) => {
         }
         const command = new UpdateItemCommand(params)
         const response = await client.send(command)
-        console.log(response)
+        console.log("Added " + newCid + " to dealId: " + dealId)
         return "Update Successful"
     } catch (error) {
         console.log(error)

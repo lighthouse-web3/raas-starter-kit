@@ -1,16 +1,10 @@
 const axios = require("axios")
-const fs = require("fs")
-const path = require("path")
-const { ethers } = require("hardhat")
+
 const EventEmitter = require("events")
-const sleep = require("util").promisify(setTimeout)
-const lighthouse = require("@lighthouse-web3/sdk")
 const logger = require("./winston")
 // Location of fetched data for each CID from edge
-const dataDownloadDir = path.join(__dirname, "download")
 const lighthouseDealDownloadEndpoint = process.env.LIGHTHOUSE_DEAL_DOWNLOAD_ENDPOINT
 const lighthouseDealInfosEndpoint = process.env.LIGHTHOUSE_DEAL_INFOS_ENDPOINT
-const lighthousePinEndpoint = process.env.LIGHTHOUSE_PIN_ENDPOINT
 const { getDealInfo } = require("./lotusApi.js")
 const {
     getCidInfo,
@@ -25,8 +19,6 @@ if (!lighthouseDealDownloadEndpoint) {
     throw new Error("Missing environment variables: data endpoints")
 }
 
-let stateFilePath = "./cache/lighthouse_agg_state.json"
-let dealFilePath = "./cache/deal_state.json"
 /// A new aggregator implementation should be created for each aggregator contract
 class LighthouseAggregator {
     constructor() {
@@ -36,52 +28,11 @@ class LighthouseAggregator {
         // lighthouse_cid: the lighthouse CID of the file
         this.eventEmitter = new EventEmitter()
         // Load previous app job state
-        this.aggregatorJobs = this.loadState()
-        this.dealNodeJobs = this.loadDealState()
-        logger.info("Loaded previous LighthouseAggregator state: ", this.aggregatorJobs)
-        // Upload any files that don't have a content ID yet (in case of interruption)
-        // For any files that do, poll the deal status
-        // this.aggregatorJobs.forEach(async (job) => {
-        //     // if (!job.lighthouse_cid) {
-        //     //     const lighthouse_cid = await this.pinCIDAndMakeDeal(job.cid)
-        //     //     job.lighthouse_cid = lighthouse_cid
-        //     //     this.saveState()
-        //     // }
-        //     this.processDealInfos(18, 1000, job.cid, job.txID)
-        // })
+
         logger.info("Aggregator initialized, polling for deals...")
     }
 
-    async processFile(cid, txID, replicationtarget) {
-        // Queue jobs only if the cid is new
-        if (!this.aggregatorJobs.some((job) => job.cid == cid)) {
-            this.enqueueJob(cid, txID, replicationtarget)
-            this.saveState()
-        } else {
-            // Update the txID for the job
-            this.aggregatorJobs.find((job) => job.cid == cid).txID = txID
-            //can be improved
-            this.aggregatorJobs.find((job) => job.cid == cid).replication_target +=
-                replicationtarget
-        }
-
-        // Pin cid to lighthouse
-        const lighthouse_cid = await this.pinCIDAndMakeDeal(cid)
-
-        // Find the job with the matching CID and update the lighthouse_cid
-        // lighthouse_cid depends on whether or not content was uploaded to edge or lighthouse.
-        this.aggregatorJobs.find((job) => job.cid == cid).lighthouse_cid = lighthouse_cid
-        this.saveState()
-
-        return cid
-    }
-
-    // async processDealInfos(maxRetries, initialDelay, lighthouse_cid, transactionId) {
     async processDealInfos(lighthouse_cid, transactionId, currentReplications, replicationTarget) {
-        // let delay = initialDelay
-
-        // for (let i = 0; i < maxRetries; i++) {
-        // try {
         let response = await axios.get(lighthouseDealInfosEndpoint, {
             params: {
                 cid: lighthouse_cid,
@@ -91,21 +42,6 @@ class LighthouseAggregator {
         if (!response.data) {
             logger.info("No deal found polling lighthouse for lighthouse_cid: " + lighthouse_cid)
         } else {
-            // console.log("Lighthouse deal infos received: ", response.data)
-            // First need to strip t0 from the front of the miner address
-            // The stripped miner string should then be converted to an integer
-            // let job = this.aggregatorJobs.find((job) => job.lighthouse_cid == lighthouse_cid)
-            // // console.log("job: ", job)
-            // if (!job.txID) {
-            //     logger.info(
-            //         "Warning: Contract may not have received deal. Please resubmit. No txID found for contentID: ",
-            //         contentID
-            //     )
-            //     this.aggregatorJobs = this.aggregatorJobs.filter(
-            //         (job) => job.contentID != contentID
-            //     )
-            //     return
-            // }
             let dealIds = []
             let miner = []
             let expirationEpoch = []
@@ -119,9 +55,7 @@ class LighthouseAggregator {
                     response.data.dealInfo.map(async (item) => {
                         const dealInfo = await getDealInfo(Number(item.dealId))
                         const x = await needRenewal(item.dealId)
-                        console.log("here", x)
                         if (dealInfo && !x) {
-                            console.log(item)
                             dealIds.push(item.dealId)
                             miner.push(item.storageProvider.replace("t0", ""))
                             expirationEpoch.push(dealInfo.Proposal.EndEpoch)
@@ -131,7 +65,7 @@ class LighthouseAggregator {
             } catch (error) {
                 logger.error(error)
             }
-            console.log("dealIds: ", dealIds)
+            // console.log("dealIds: ", dealIds)
             let dealInfos = {
                 txID: transactionId,
                 dealID: dealIds,
@@ -142,7 +76,6 @@ class LighthouseAggregator {
                 miner: miner,
             }
             if (dealInfos.dealID.length > currentReplications) {
-                console.log("here", dealInfos.dealID.length, currentReplications)
                 await updateCidRecord(
                     lighthouse_cid,
                     "currentReplications",
@@ -162,17 +95,6 @@ class LighthouseAggregator {
                 )
                 this.eventEmitter.emit("DealReceived", dealInfos)
 
-                //important
-                //reduces replication target by 1 or removes job if it reaches 0
-
-                // currently Remove the job from the list
-
-                // this.aggregatorJobs = this.aggregatorJobs.filter(
-                //     (job) => job.lighthouse_cid != lighthouse_cid
-                // )
-                // this.saveState()
-
-                // Assuming dealInfos.dealID is an array of deal IDs
                 // await Promise.all(
                 dealInfos.dealID.forEach(async (dealID, i) => {
                     const dealInfo = await getDealbyId(dealID)
@@ -186,60 +108,11 @@ class LighthouseAggregator {
                         })
                     }
                 })
-                // )
+
                 return
             } else {
                 logger.info("Waiting for nonzero dealID: " + lighthouse_cid)
             }
-        }
-        // }
-        // catch (e) {
-        //     console.log("Error polling lighthouse for lighthouse_cid: ", lighthouse_cid + e)
-        // }
-        // await sleep(delay)
-        // delay *= 2
-        // }
-        // this.eventEmitter.emit("error", new Error("All retries failed, totaling: " + maxRetries))
-    }
-
-    // async uploadFileAndMakeDeal(filePath) {
-    //     try {
-    //         const dealParams = {
-    //             miner: [process.env.MINER],
-    //             repair_threshold: null,
-    //             renew_threshold: null,
-    //             network: process.env.NETWORK,
-    //         }
-    //         const response = await lighthouse.upload(
-    //             filePath,
-    //             process.env.LIGHTHOUSE_API_KEY,
-    //             false,
-    //             dealParams
-    //         )
-    //         const lighthouse_cid = response.data.Hash
-    //         console.log("Uploaded file, lighthouse_cid: ", lighthouse_cid)
-    //         return lighthouse_cid
-    //     } catch (error) {
-    //         logger.error("An error occurred:" + error)
-    //     }
-    // }
-
-    async pinCIDAndMakeDeal(cidString) {
-        try {
-            const data = {
-                cid: cidString,
-                raas: {
-                    network: "calibration",
-                },
-            }
-            const pinResponse = await axios.post(lighthousePinEndpoint, data, {
-                headers: {
-                    Authorization: `Bearer ${process.env.LIGHTHOUSE_API_KEY}`,
-                },
-            })
-            return cidString
-        } catch (error) {
-            logger.error("An error occurred:" + error)
         }
     }
 
@@ -248,13 +121,6 @@ class LighthouseAggregator {
 
         while (retries >= 0) {
             try {
-                // important
-                // call this function as many replications are needed
-                // const lighthouseCID = await this.processFile(
-                //     cidString,
-                //     transactionId,
-                //     _replication_target
-                // )
                 const cidInfo = await getCidInfo(cidString)
                 if (cidInfo) {
                     if (cidInfo.transactionId !== transactionId) {
@@ -266,6 +132,9 @@ class LighthouseAggregator {
                             "replicationTarget",
                             Number(_replication_target)
                         )
+                    }
+                    if (cidInfo.currentReplications >= _replication_target) {
+                        await updateCidRecord(cidString, "status", "complete")
                     }
                 } else {
                     await createCidRecord({
@@ -289,76 +158,6 @@ class LighthouseAggregator {
 
             retries-- // Decrement the retry counter
         }
-    }
-
-    loadState(path = stateFilePath) {
-        // check if the state file exists
-        if (fs.existsSync(path)) {
-            // if it exists, read it and parse the JSON
-            const rawData = fs.readFileSync(path)
-            return JSON.parse(rawData)
-        } else {
-            // if it doesn't exist, return an empty array
-            return []
-        }
-    }
-
-    loadDealState(path = dealFilePath) {
-        // check if the state file exists
-        if (fs.existsSync(path)) {
-            // if it exists, read it and parse the JSON
-            const rawData = fs.readFileSync(path)
-            return JSON.parse(rawData)
-        } else {
-            // if it doesn't exist, return an empty array
-            return []
-        }
-    }
-    saveState(path = stateFilePath) {
-        // write the current state to the file
-        if (path != undefined) {
-            stateFilePath = path
-        }
-        const data = JSON.stringify(this.aggregatorJobs)
-        fs.writeFileSync(path, data)
-    }
-
-    saveDealState(path = dealFilePath) {
-        // write the current state to the file
-        if (path != undefined) {
-            dealFilePath = path
-        }
-        const data = JSON.stringify(this.dealNodeJobs)
-        fs.writeFileSync(path, data)
-    }
-
-    enqueueJob(cid, txID, replicationtarget) {
-        this.aggregatorJobs.push({
-            cid: cid,
-            txID: txID,
-            replication_target: replicationtarget,
-        })
-    }
-
-    dequeueJob(cid, txID) {
-        this.aggregatorJobs = this.aggregatorJobs.filter(
-            (job) => job.txID != txID && job.cid != cid
-        )
-    }
-
-    saveResponseToFile(response, filePath) {
-        const writer = fs.createWriteStream(filePath)
-
-        // Pipe the response data to the file
-        response.data.pipe(writer)
-
-        return new Promise((resolve, reject) => {
-            writer.on("finish", () => resolve(filePath))
-            writer.on("error", (err) => {
-                logger.error("Error saving response to file: " + err)
-                reject(err)
-            })
-        })
     }
 }
 

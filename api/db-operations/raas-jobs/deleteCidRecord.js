@@ -1,7 +1,7 @@
 const { DeleteItemCommand } = require("@aws-sdk/client-dynamodb")
 const { CidRecord } = require("../utils/constants")
 const client = require("../ddbClient")
-
+const logger = require("../../winston")
 const deleteCidRecord = async (cid) => {
     try {
         const params = {
@@ -10,7 +10,7 @@ const deleteCidRecord = async (cid) => {
         }
         const command = new DeleteItemCommand(params)
         const response = await client.send(command)
-        console.log(response)
+        logger.info("Deleted Cid " + cid)
         return "Delete Successful"
     } catch (error) {
         console.log(error)
@@ -18,6 +18,6 @@ const deleteCidRecord = async (cid) => {
     }
 }
 
-deleteCidRecord("QmS7Do1mDZNBJAVyE8N9r6wYMdg27LiSj5W9mmm9TZoeWp")
+// deleteCidRecord("QmYGqc5hNSQDQfMAvv3VhsPbhMjwbwaPLXDeaBgSBsqvGn")
 
 module.exports = deleteCidRecord

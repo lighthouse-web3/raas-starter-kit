@@ -22,7 +22,7 @@ task("submit-raas", "Calls submit raas function of dealStatus")
         const dealStatus = await DealStatus.attach(contractAddr)
 
         //send a transaction to call makeDealProposal() method
-        transaction = await dealStatus.submitRaaS(cid, 3, 100, 100)
+        transaction = await dealStatus.submitRaaS(cid, 2, 100, 100)
         transactionReceipt = await transaction.wait()
         // console.log(transactionReceipt)
 

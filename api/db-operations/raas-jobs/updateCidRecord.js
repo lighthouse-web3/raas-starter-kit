@@ -2,7 +2,7 @@ const { UpdateItemCommand } = require("@aws-sdk/client-dynamodb")
 const client = require("../ddbClient")
 const { CidRecord } = require("../utils/constants")
 const { marshall } = require("@aws-sdk/util-dynamodb")
-
+const logger = require("../../winston")
 const updateCidRecord = async (cid, attributeName, attributeValue) => {
     try {
         const params = {
@@ -19,7 +19,7 @@ const updateCidRecord = async (cid, attributeName, attributeValue) => {
         }
         const command = new UpdateItemCommand(params)
         const response = await client.send(command)
-        console.log(response)
+        logger.info("Updated attribute " + attributeName + " for cid " + cid)
         return "Update Successful"
     } catch (error) {
         console.log(error)
@@ -43,7 +43,7 @@ const updateArrayInCidRecord = async (cid, attributeName, attributeValue) => {
         }
         const command = new UpdateItemCommand(params)
         const response = await client.send(command)
-        console.log(response)
+        logger.info("Updated attribute " + attributeName + " for cid " + cid)
         return "Update Successful"
     } catch (error) {
         console.log(error)

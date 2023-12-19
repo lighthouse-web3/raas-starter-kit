@@ -1,7 +1,7 @@
 const client = require("../ddbClient")
 const { DealRecord } = require("../utils/constants")
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb")
-
+const logger = require("../../winston")
 const { GetItemCommand } = require("@aws-sdk/client-dynamodb")
 // module.exports
 
@@ -13,7 +13,7 @@ const getDeal = async (dealId) => {
         }
         const command = new GetItemCommand(params)
         const response = await client.send(command)
-        console.log(response)
+        logger.info("Recieved DealId " + dealId)
         if (!response.Item) {
             return null
         }

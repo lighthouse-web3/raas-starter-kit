@@ -18,9 +18,7 @@ const LighthouseAggregator = require("./lighthouseAggregator.js")
 const upload = multer({ dest: "temp/" }) // Temporary directory for uploads
 const { executeRenewalJobs, executeRepairJobs } = require("./repairAndRenewal.js")
 const { getIncompleteCidRecords } = require("./db-operations/raas-jobs")
-// let stateFilePath = "./cache/service_state.json"
-
-// let storedNodeJobs
+const logger = require("./winston")
 let lighthouseAggregatorInstance
 let isDealCreationListenerActive = false
 
@@ -97,19 +95,6 @@ async function initializeDealCreationListener() {
         const cidString = ethers.utils.toUtf8String(cid)
 
         ;(async () => {
-            // Match CID to aggregator type by first finding the matching job in jobs list
-            // const job = storedNodeJobs.find((job) => job.cid === cidString)
-            // Once the deal returned by getDealInfos no longer contains a deal_id of 0, complete the deal
-            // Should be working alongside other instances of invocations of this function
-            // To process the dealInfos before completion of deal is handled at dataRetrievalListener
-            // Max retries: 18 (48 hours)
-            // Initial delay: 1000 ms
-            // if (job === undefined) {
-            //     // If the CID lookup doesn't yield a job
-            //     console.log("Error: Aggregator type not specified for job with CID: ", cidString)
-            // } else {
-            // if (job.aggregator === "lighthouse") {
-            // Reattach the event listener
             if (dealStatus.listenerCount("SubmitAggregatorRequestWithRaaS") === 0) {
                 dealStatus.once("SubmitAggregatorRequestWithRaaS", handleEvent)
             }
@@ -121,18 +106,9 @@ async function initializeDealCreationListener() {
                 )
                 return result
             } catch (error) {
-                console.error("File processing error. Please try again:", error)
-                // storedNodeJobs.splice(storedNodeJobs.indexOf(job), 1)
-                // saveJobsToState()
+                logger.error("File processing error. Please try again:" + error)
             }
-            // }
-            // else {
-            //     console.log("Error: Invalid aggregator type for job with CID: ", cidString)
-            //     // Remove the job if the aggregator type is invalid
-            //     storedNodeJobs.splice(storedNodeJobs.indexOf(job), 1)
-            //     saveJobsToState()
-            // }
-            // }
+
             if (dealStatus.listenerCount("SubmitAggregatorRequestWithRaaS") === 0) {
                 dealStatus.once("SubmitAggregatorRequestWithRaaS", handleEvent)
             }
@@ -144,30 +120,6 @@ async function initializeDealCreationListener() {
         dealStatus.once("SubmitAggregatorRequestWithRaaS", handleEvent)
     }
 }
-
-// async function lighthouseProcessWithRetry(cidString, transactionId, _replication_target) {
-//     let retries = 1 // Number of retries
-
-//     while (retries >= 0) {
-//         try {
-//             // important
-//             // call this function as many replications are needed
-//             const lighthouseCID = await lighthouseAggregatorInstance.processFile(
-//                 cidString,
-//                 transactionId
-//             )
-//             await lighthouseAggregatorInstance.processDealInfos(18, 1000, lighthouseCID)
-//             return lighthouseCID // Return the result if successful
-//         } catch (error) {
-//             console.error("An error occurred:", error)
-//             if (retries === 0) {
-//                 throw error // If no more retries left, rethrow the error
-//             }
-//         }
-
-//         retries-- // Decrement the retry counter
-//     }
-// }
 
 // Initialize the listener for the Data Retrieval event
 async function initializeDataRetrievalListener() {
@@ -202,7 +154,7 @@ async function initializeDataRetrievalListener() {
         //     }
         // })
         // saveJobsToState()
-        console.log("Deal received with dealInfos: ", dealInfos)
+        logger.info("Deal received with dealInfos: " + dealInfos)
         try {
             // For each dealID, complete the deal
             for (let i = 0; i < dealIDs.length; i++) {
@@ -225,29 +177,14 @@ async function initializeDataRetrievalListener() {
                 //     [verifierData.commPc, verifierData.sizePc],
                 //     { gasLimit: ethers.utils.parseUnits("3000000", "wei") }
                 // )
-                console.log("Deal completed for deal ID: ", dealIDs[i])
+                logger.info("Deal completed for deal ID: " + dealIDs[i])
             }
         } catch (err) {
-            console.log("Error submitting file for completion: ", err)
-            // Remove the job at this stage if the deal cannot be completed
-            // storedNodeJobs = storedNodeJobs.filter((job) => job.txID != txID)
-            // saveJobsToState()
+            logger.error("Error submitting file for completion: " + err)
         }
     })
 
     lighthouseAggregatorInstance.eventEmitter.on("Error", (error) => {
-        console.error("An error occurred:", error)
+        logger.error("An error occurred:" + error)
     })
-}
-function loadJobsFromState() {
-    if (fs.existsSync(stateFilePath)) {
-        const rawData = fs.readFileSync(stateFilePath)
-        return JSON.parse(rawData)
-    } else {
-        return []
-    }
-}
-function saveJobsToState() {
-    const data = JSON.stringify(storedNodeJobs)
-    fs.writeFileSync(stateFilePath, data)
 }
