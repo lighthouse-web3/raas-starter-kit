@@ -52,10 +52,10 @@ app.listen(port, () => {
         }, 5000) // 5000 milliseconds = 5 seconds
     }, 10000) // 10000 milliseconds = 10 seconds
 
-    // setInterval(async () => {
-    //     console.log("executing repair jobs")
-    //     await executeRepairJobs(lighthouseAggregatorInstance)
-    // }, 20000) // 10000 milliseconds = 10 seconds
+    setInterval(async () => {
+        console.log("executing repair jobs")
+        await executeRepairJobs()
+    }, 20000) // 10000 milliseconds = 10 seconds
 })
 
 // app.use(express.urlencoded({ extended: true }))

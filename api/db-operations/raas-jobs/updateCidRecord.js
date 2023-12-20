@@ -54,7 +54,7 @@ const updateArrayInCidRecord = async (cid, attributeName, attributeValue) => {
 // const dealInfos = {
 //     dealID: [],
 // }
-// // updateCidRecord("QmZ2Y3", "status", "incomplete")
+// // updateCidRecord("QmZ2Y3", "cidStatus", "incomplete")
 // updateCidRecord(
 //     "QmS7Do1mDZNBJAVyE8N9r6wYMdg27LiSj5W9mmm9TZoeWp",
 //     "currentReplications",

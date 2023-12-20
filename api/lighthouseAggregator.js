@@ -45,7 +45,7 @@ class LighthouseAggregator {
             let dealIds = []
             let miner = []
             let expirationEpoch = []
-            logger.info("response.data.dealInfo: " + response.data.dealInfo)
+            // logger.info("response.data.dealInfo: " + response.data.dealInfo)
             if (!response.data.dealInfo) {
                 logger.info("Waiting for nonzero dealID: " + lighthouse_cid)
                 return
@@ -85,7 +85,7 @@ class LighthouseAggregator {
                 await updateArrayInCidRecord(lighthouse_cid, "miners", dealInfos.miner)
             } else return
             if (dealInfos.dealID.length >= replicationTarget) {
-                await updateCidRecord(lighthouse_cid, "status", "complete")
+                await updateCidRecord(lighthouse_cid, "cidStatus", "complete")
             }
 
             // If we receive a nonzero dealID, emit the DealReceived event
@@ -134,7 +134,7 @@ class LighthouseAggregator {
                         )
                     }
                     if (cidInfo.currentReplications >= _replication_target) {
-                        await updateCidRecord(cidString, "status", "complete")
+                        await updateCidRecord(cidString, "cidStatus", "complete")
                     }
                 } else {
                     await createCidRecord({
@@ -144,7 +144,7 @@ class LighthouseAggregator {
                         miners: [],
                         currentReplications: 0,
                         replicationTarget: Number(_replication_target),
-                        status: _replication_target === 0 ? "complete" : "incomplete",
+                        cidStatus: _replication_target === 0 ? "complete" : "incomplete",
                     })
                 }
                 // await this.processDealInfos(18, 1000, lighthouseCID, transactionId)

@@ -7,9 +7,9 @@ const getIncompleteCidRecords = async () => {
     try {
         const params = {
             TableName: CidRecord,
-            FilterExpression: "#status = :status",
+            FilterExpression: "#cidStatus = :status",
             ExpressionAttributeNames: {
-                "#status": "status",
+                "#cidStatus": "cidStatus",
             },
             ExpressionAttributeValues: {
                 ":status": { S: "incomplete" },
