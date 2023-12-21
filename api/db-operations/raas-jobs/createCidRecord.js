@@ -8,6 +8,8 @@ const createCidRecord = async (record) => {
     try {
         // console.log(record)
         // console.log(CidRecord)
+        record.lastUpdate = Math.floor(Date.now() / 1000)
+
         const params = {
             TableName: CidRecord,
             Item: marshall(record),
@@ -29,6 +31,7 @@ const createCidRecord = async (record) => {
 //     miners: [],
 //     currentReplications: 0,
 //     replicationTarget: 3,
-//     status: "incomplete",
+//     cidStatus: "incomplete",
+//     lastUpdate: 1703101963,
 // })
 module.exports = createCidRecord

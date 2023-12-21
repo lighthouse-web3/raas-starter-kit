@@ -11,9 +11,11 @@ const {
     updateCidRecord,
     createCidRecord,
     updateArrayInCidRecord,
+    doLastUpdate,
 } = require("./db-operations/raas-jobs")
 const { createDeal, getDealbyId, updateDeal } = require("./db-operations/raas-deals")
 const { needRenewal } = require("./repairAndRenewal")
+const { ReplicaAlreadyExistsException } = require("@aws-sdk/client-dynamodb")
 
 if (!lighthouseDealDownloadEndpoint) {
     throw new Error("Missing environment variables: data endpoints")
@@ -36,7 +38,7 @@ class LighthouseAggregator {
         let response = await axios.get(lighthouseDealInfosEndpoint, {
             params: {
                 cid: lighthouse_cid,
-                network: "testnet", // Change the network to mainnet when ready
+                // network: "testnet", // Change the network to mainnet when ready
             },
         })
         if (!response.data) {
@@ -57,7 +59,11 @@ class LighthouseAggregator {
                         const x = await needRenewal(item.dealId)
                         if (dealInfo && !x) {
                             dealIds.push(item.dealId)
-                            miner.push(item.storageProvider.replace("t0", ""))
+                            if (item.storageProvider.startsWith("f0")) {
+                                miner.push(item.storageProvider.replace("f0", ""))
+                            } else {
+                                miner.push(item.storageProvider.replace("t0", ""))
+                            }
                             expirationEpoch.push(dealInfo.Proposal.EndEpoch)
                         }
                     })
@@ -75,7 +81,10 @@ class LighthouseAggregator {
                 // Replace the t0 prefix with an empty string to get the address
                 miner: miner,
             }
-            if (dealInfos.dealID.length > currentReplications) {
+            if (
+                dealInfos.dealID.length >= replicationTarget &&
+                dealInfos.dealID.length > currentReplications
+            ) {
                 await updateCidRecord(
                     lighthouse_cid,
                     "currentReplications",
@@ -83,15 +92,24 @@ class LighthouseAggregator {
                 )
                 await updateArrayInCidRecord(lighthouse_cid, "dealIDs", dealInfos.dealID)
                 await updateArrayInCidRecord(lighthouse_cid, "miners", dealInfos.miner)
-            } else return
-            if (dealInfos.dealID.length >= replicationTarget) {
                 await updateCidRecord(lighthouse_cid, "cidStatus", "complete")
-            }
+                await doLastUpdate(lighthouse_cid)
+            } else if (dealInfos.dealID.length > currentReplications) {
+                await updateCidRecord(
+                    lighthouse_cid,
+                    "currentReplications",
+                    dealInfos.dealID.length
+                )
+                await updateArrayInCidRecord(lighthouse_cid, "dealIDs", dealInfos.dealID)
+                await updateArrayInCidRecord(lighthouse_cid, "miners", dealInfos.miner)
+                await doLastUpdate(lighthouse_cid)
+            } else return
 
             // If we receive a nonzero dealID, emit the DealReceived event
             if (dealInfos.dealID[0] != null) {
                 logger.info(
-                    "Lighthouse deal infos processed after receiving nonzero dealID: " + dealInfos
+                    "Lighthouse deal infos processed after receiving nonzero dealID: " +
+                        JSON.stringify(dealInfos)
                 )
                 this.eventEmitter.emit("DealReceived", dealInfos)
 
@@ -124,26 +142,23 @@ class LighthouseAggregator {
                 const cidInfo = await getCidInfo(cidString)
                 if (cidInfo) {
                     if (cidInfo.transactionId !== transactionId) {
-                        await updateCidRecord(cidString, "transactionId", Number(transactionId))
+                        await updateCidRecord(cidString, "transactionId", transactionId)
                     }
                     if (cidInfo.replicationTarget !== _replication_target) {
-                        await updateCidRecord(
-                            cidString,
-                            "replicationTarget",
-                            Number(_replication_target)
-                        )
+                        await updateCidRecord(cidString, "replicationTarget", _replication_target)
                     }
                     if (cidInfo.currentReplications >= _replication_target) {
                         await updateCidRecord(cidString, "cidStatus", "complete")
                     }
+                    await doLastUpdate(cidString)
                 } else {
                     await createCidRecord({
                         cid: cidString,
-                        transactionId: Number(transactionId),
+                        transactionId: transactionId,
                         dealIDs: [],
                         miners: [],
                         currentReplications: 0,
-                        replicationTarget: Number(_replication_target),
+                        replicationTarget: _replication_target,
                         cidStatus: _replication_target === 0 ? "complete" : "incomplete",
                     })
                 }

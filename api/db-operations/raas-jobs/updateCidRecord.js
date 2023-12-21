@@ -51,6 +51,29 @@ const updateArrayInCidRecord = async (cid, attributeName, attributeValue) => {
     }
 }
 
+const doLastUpdate = async (cid) => {
+    try {
+        const params = {
+            TableName: CidRecord,
+            Key: { cid: { S: cid } },
+            UpdateExpression: `set #attrName = :v`,
+            ExpressionAttributeNames: {
+                "#attrName": "lastUpdate",
+            },
+            ExpressionAttributeValues: {
+                ":v": marshall(Math.floor(Date.now() / 1000)),
+            },
+            ReturnValues: "UPDATED_NEW",
+        }
+        const command = new UpdateItemCommand(params)
+        const response = await client.send(command)
+        logger.info("Updated lastUpdate for cid " + cid)
+        return "Update Successful"
+    } catch (error) {
+        console.log(error)
+        throw new Error()
+    }
+}
 // const dealInfos = {
 //     dealID: [],
 // }
@@ -61,4 +84,4 @@ const updateArrayInCidRecord = async (cid, attributeName, attributeValue) => {
 //     dealInfos.dealID.length
 // )
 
-module.exports = { updateCidRecord, updateArrayInCidRecord }
+module.exports = { updateCidRecord, updateArrayInCidRecord, doLastUpdate }

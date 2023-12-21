@@ -101,8 +101,8 @@ async function initializeDealCreationListener() {
             try {
                 const result = await lighthouseAggregatorInstance.lighthouseProcessWithRetry(
                     cidString,
-                    transactionId,
-                    _replication_target
+                    Number(transactionId),
+                    Number(_replication_target)
                 )
                 return result
             } catch (error) {
@@ -154,7 +154,7 @@ async function initializeDataRetrievalListener() {
         //     }
         // })
         // saveJobsToState()
-        logger.info("Deal received with dealInfos: " + dealInfos)
+        logger.info("Deal received with dealInfos: " + JSON.stringify(dealInfos))
         try {
             // For each dealID, complete the deal
             for (let i = 0; i < dealIDs.length; i++) {

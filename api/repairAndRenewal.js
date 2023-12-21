@@ -1,7 +1,12 @@
 const { getDealInfo, getBlockNumber } = require("./lotusApi.js")
 const logger = require("./winston")
 const { getAllDeals, updateDeal, deleteDeal } = require("./db-operations/raas-deals")
-const { getCidInfo, updateCidRecord, updateArrayInCidRecord } = require("./db-operations/raas-jobs")
+const {
+    getCidInfo,
+    updateCidRecord,
+    updateArrayInCidRecord,
+    doLastUpdate,
+} = require("./db-operations/raas-jobs")
 
 async function executeRepairJobs() {
     const REPAIR_EPOCHS = 1000 // Replace with the actual value
@@ -78,7 +83,8 @@ async function updateCidAfterDealExpiration(deal) {
     await updateArrayInCidRecord(cidInfo.cid, "dealIDs", cidInfo.dealIDs)
     await updateArrayInCidRecord(cidInfo.cid, "miners", cidInfo.miners)
     await updateCidRecord(cidInfo.cid, "currentReplications", Number(cidInfo.replications - 1))
-    await updateCidRecord(cidInfo.cid, "status", "incomplete")
+    await updateCidRecord(cidInfo.cid, "cidStatus", "incomplete")
+    await doLastUpdate(cidInfo.cid)
 }
 // console.log(await needRenewal(164540))
 module.exports = { executeRepairJobs, executeRenewalJobs, needRenewal }
