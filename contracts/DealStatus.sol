@@ -141,4 +141,8 @@ contract DealStatus is IAggregatorOracle, Proof, Ownable {
     function changeMaxReplications(uint256 _maxReplications) external onlyOwner {
         maxReplications = _maxReplications;
     }
+
+    function getMaxReplications() external view returns (uint256) {
+        return maxReplications;
+    }
 }
