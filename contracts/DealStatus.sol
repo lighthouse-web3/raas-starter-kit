@@ -6,15 +6,18 @@ pragma solidity ^0.8.17;
 
 import "./interfaces/IAggregatorOracle.sol";
 import "./data-segment/Proof.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 // Delta that implements the AggregatorOracle interface
-contract DealStatus is IAggregatorOracle, Proof {
+contract DealStatus is IAggregatorOracle, Proof, Ownable {
     uint256 private transactionId;
     mapping(uint256 => bytes) private txIdToCid;
     mapping(bytes => Deal[]) private cidToDeals;
+    uint256 public maxReplications;
 
-    constructor() {
+    constructor(uint256 _maxReplications) Ownable() {
         transactionId = 0;
+        maxReplications = _maxReplications;
     }
 
     function submit(bytes memory _cid) external returns (uint256) {
@@ -36,6 +39,7 @@ contract DealStatus is IAggregatorOracle, Proof {
         uint256 _renew_threshold
     ) external returns (uint256) {
         // Increment the transaction ID
+        require(_replication_target <= maxReplications, "Replications exceeding the limit");
         transactionId++;
 
         // Save _cid
@@ -67,7 +71,7 @@ contract DealStatus is IAggregatorOracle, Proof {
         bytes memory cid = txIdToCid[_id];
         for (uint256 i = 0; i < cidToDeals[cid].length; i++) {
             if (cidToDeals[cid][i].dealId == _dealId) {
-                return this.computeExpectedAuxData(_proof, _verifierData);
+                return computeExpectedAuxData(_proof, _verifierData);
             }
         }
 
@@ -76,7 +80,7 @@ contract DealStatus is IAggregatorOracle, Proof {
 
         // Perform validation logic
         // return this.computeExpectedAuxDataWithDeal(_dealId, _proof, _verifierData);
-        return this.computeExpectedAuxData(_proof, _verifierData);
+        return computeExpectedAuxData(_proof, _verifierData);
     }
 
     // allDealIds should return all the deal ids created by the aggregator
@@ -132,5 +136,9 @@ contract DealStatus is IAggregatorOracle, Proof {
         }
 
         return expiringDealIds;
+    }
+
+    function changeMaxReplications(uint256 _maxReplications) external onlyOwner {
+        maxReplications = _maxReplications;
     }
 }

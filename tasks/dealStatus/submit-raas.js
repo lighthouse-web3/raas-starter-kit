@@ -12,11 +12,7 @@ task("submit-raas", "Calls submit raas function of dealStatus")
         const wallet = new ethers.Wallet(network.config.accounts[0], ethers.provider)
 
         //create a DealStatus contract factory
-        const DealStatus = await ethers.getContractFactory("DealStatus", {
-            libraries: {
-                Cid: "0xe2ba943baed71c8d28363e3e5aba5dcff1585bce",
-            },
-        })
+        const DealStatus = await ethers.getContractFactory("DealStatus")
         //create a DealStatus contract instance
         //this is what you will call to interact with the deployed contract
         const dealStatus = await DealStatus.attach(contractAddr)
