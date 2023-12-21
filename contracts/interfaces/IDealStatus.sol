@@ -2,8 +2,6 @@
 pragma solidity ^0.8.17;
 
 import "./IAggregatorOracle.sol";
-import "../data-segment/Proof.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IDealStatus is IAggregatorOracle {
     function submit(bytes memory _cid) external returns (uint256);
