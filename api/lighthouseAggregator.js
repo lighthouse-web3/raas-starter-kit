@@ -54,7 +54,7 @@ class LighthouseAggregator {
                 logger.info("Waiting for nonzero dealID: " + lighthouse_cid)
                 return
             }
-            console.log("response.data.dealInfo: ", response.data.dealInfo[0])
+            // console.log("response.data.dealInfo: ", response.data.dealInfo[0])
             try {
                 await Promise.all(
                     response.data.dealInfo.map(async (item) => {
