@@ -6,6 +6,7 @@ const {
     updateCidRecord,
     updateArrayInCidRecord,
     doLastUpdate,
+    updateCidRecordAll,
 } = require("./db-operations/raas-jobs")
 
 async function executeRepairJobs() {
@@ -79,15 +80,24 @@ async function updateCidAfterDealExpiration(deal) {
                 cidInfo.miners.splice(i, 1)
             }
         }
-        await updateArrayInCidRecord(cidInfo.cid, "dealIDs", cidInfo.dealIDs)
-        await updateArrayInCidRecord(cidInfo.cid, "miners", cidInfo.miners)
-        await updateCidRecord(
-            cidInfo.cid,
-            "currentReplications",
-            Number(cidInfo.currentReplications) - 1
-        )
-        await updateCidRecord(cidInfo.cid, "cidStatus", "incomplete")
-        await doLastUpdate(cidInfo.cid)
+        const newCidInfo = {
+            cid: cidInfo.cid,
+            dealIDs: cidInfo.dealIDs,
+            miners: cidInfo.miners,
+            currentReplications: Number(cidInfo.currentReplications) - 1,
+
+            cidStatus: "incomplete",
+        }
+        await updateCidRecordAll(newCidInfo)
+        // await updateArrayInCidRecord(cidInfo.cid, "dealIDs", cidInfo.dealIDs)
+        // await updateArrayInCidRecord(cidInfo.cid, "miners", cidInfo.miners)
+        // await updateCidRecord(
+        //     cidInfo.cid,
+        //     "currentReplications",
+        //     Number(cidInfo.currentReplications) - 1
+        // )
+        // await updateCidRecord(cidInfo.cid, "cidStatus", "incomplete")
+        // await doLastUpdate(cidInfo.cid)
     }
 }
 
