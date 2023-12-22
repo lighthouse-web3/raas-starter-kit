@@ -181,23 +181,23 @@ async function initializeDataRetrievalListener() {
                 // console.log(`dealID: Type - ${typeof dealIDs[i]}, Value - ${dealIDs[i]}`)
                 // console.log(`miner: Type - ${typeof miners[i]}, Value - ${miners[i]}`)
 
-                await dealStatus.complete(
-                    txID,
-                    dealIDs[i],
-                    miners[i],
-                    [
-                        [
-                            Number(inclusion_proof[i].proofIndex.index),
-                            inclusion_proof[i].proofIndex.path,
-                        ],
-                        [
-                            Number(inclusion_proof[i].proofSubtree.index),
-                            inclusion_proof[i].proofSubtree.path,
-                        ],
-                    ],
-                    [verifier_data[i].commPc, verifier_data[i].sizePc],
-                    { gasLimit: ethers.utils.parseUnits("5000000", "wei") }
-                )
+                // await dealStatus.complete(
+                //     txID,
+                //     dealIDs[i],
+                //     miners[i],
+                //     [
+                //         [
+                //             Number(inclusion_proof[i].proofIndex.index),
+                //             inclusion_proof[i].proofIndex.path,
+                //         ],
+                //         [
+                //             Number(inclusion_proof[i].proofSubtree.index),
+                //             inclusion_proof[i].proofSubtree.path,
+                //         ],
+                //     ],
+                //     [verifier_data[i].commPc, verifier_data[i].sizePc],
+                //     { gasLimit: ethers.utils.parseUnits("5000000", "wei") }
+                // )
                 logger.info("Deal completed for deal ID: " + dealIDs[i])
             }
         } catch (err) {
