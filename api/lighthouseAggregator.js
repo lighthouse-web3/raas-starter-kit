@@ -87,7 +87,7 @@ class LighthouseAggregator {
                 })
             )
 
-            console.log("dealIds: ", dealIds)
+            // console.log("dealIds: ", dealIds)
             let dealInfos = {
                 txID: transactionId,
                 cid: lighthouse_cid,
@@ -99,12 +99,12 @@ class LighthouseAggregator {
                 miner: miner,
                 expirationEpoch: expirationEpoch,
             }
-            console.log(dealInfos.dealID.length)
+            // console.log(dealInfos.dealID.length)
             if (
                 dealInfos.dealID.length >= replicationTarget &&
                 dealInfos.dealID.length >= currentReplications
             ) {
-                console.log(replicationTarget, currentReplications, dealInfos.dealID.length)
+                // console.log(replicationTarget, currentReplications, dealInfos.dealID.length)
                 const newCidInfo = {
                     cid: lighthouse_cid,
                     dealIDs: dealInfos.dealID,
