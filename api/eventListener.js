@@ -10,10 +10,10 @@ const fs = require("fs")
 const path = require("path")
 const multer = require("multer")
 const sleep = require("util").promisify(setTimeout)
-
+require("dotenv").config()
 const port = 1337
 const contractName = "DealStatus"
-const contractInstance = "0x16c74b630d8c28bfa0f353cf19c5b114407a8051" // The user will also input
+const contractInstance = process.env.DEAL_STATUS_ADDRESS // The user will also input
 const LighthouseAggregator = require("./lighthouseAggregator.js")
 const upload = multer({ dest: "temp/" }) // Temporary directory for uploads
 const { executeRenewalJobs, executeRepairJobs } = require("./repairAndRenewal.js")
