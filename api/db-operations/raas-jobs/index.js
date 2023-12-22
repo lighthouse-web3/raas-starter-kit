@@ -1,5 +1,10 @@
 const createCidRecord = require("./createCidRecord")
-const { updateCidRecord, updateArrayInCidRecord, doLastUpdate } = require("./updateCidRecord")
+const {
+    updateCidRecord,
+    updateArrayInCidRecord,
+    doLastUpdate,
+    updateCidRecordAll,
+} = require("./updateCidRecord")
 const getIncompleteCidRecords = require("./getIncompleteCids")
 const deleteCidRecord = require("./deleteCidRecord")
 const getCidInfo = require("./getCidInfo")
@@ -11,4 +16,5 @@ module.exports = {
     deleteCidRecord,
     getCidInfo,
     doLastUpdate,
+    updateCidRecordAll,
 }

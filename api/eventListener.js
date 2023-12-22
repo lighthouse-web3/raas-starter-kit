@@ -2,20 +2,15 @@ const express = require("express")
 const { ethers } = require("hardhat")
 const cors = require("cors")
 
-const { networkConfig } = require("../helper-hardhat-config")
-
-const axios = require("axios")
 const app = express()
-const fs = require("fs")
-const path = require("path")
-const multer = require("multer")
-const sleep = require("util").promisify(setTimeout)
 
+const path = require("path")
+
+require("dotenv").config()
 const port = 1337
 const contractName = "DealStatus"
-const contractInstance = "0x16c74b630d8c28bfa0f353cf19c5b114407a8051" // The user will also input
+const contractInstance = process.env.DEAL_STATUS_ADDRESS // The user will also input
 const LighthouseAggregator = require("./lighthouseAggregator.js")
-const upload = multer({ dest: "temp/" }) // Temporary directory for uploads
 const { executeRenewalJobs, executeRepairJobs } = require("./repairAndRenewal.js")
 const { getIncompleteCidRecords } = require("./db-operations/raas-jobs")
 const logger = require("./winston")
@@ -27,7 +22,6 @@ app.listen(port, () => {
     if (!isDealCreationListenerActive) {
         isDealCreationListenerActive = true
         initializeDealCreationListener()
-        initializeDataRetrievalListener()
         // storedNodeJobs = loadJobsFromState()
         lighthouseAggregatorInstance = new LighthouseAggregator()
     }
@@ -49,13 +43,13 @@ app.listen(port, () => {
         setTimeout(async () => {
             console.log("Executing jobs")
             await executeRenewalJobs()
-        }, 5000) // 5000 milliseconds = 5 seconds
-    }, 10000) // 10000 milliseconds = 10 seconds
+        }, 300000)
+    }, 600000) // 10000 milliseconds = 10 seconds
 
     setInterval(async () => {
         console.log("executing repair jobs")
         await executeRepairJobs()
-    }, 20000) // 10000 milliseconds = 10 seconds
+    }, 1800000) // 10000 milliseconds = 10 seconds
 })
 
 // app.use(express.urlencoded({ extended: true }))
@@ -119,93 +113,4 @@ async function initializeDealCreationListener() {
     if (dealStatus.listenerCount("SubmitAggregatorRequestWithRaaS") === 0) {
         dealStatus.once("SubmitAggregatorRequestWithRaaS", handleEvent)
     }
-}
-
-// Initialize the listener for the Data Retrieval event
-async function initializeDataRetrievalListener() {
-    // Create a listener for the data retrieval endpoints to complete deals
-    // Event listeners for the 'done' and 'error' events
-    const dealStatus = await ethers.getContractAt(contractName, contractInstance)
-
-    // Listener for edge aggregator
-    lighthouseAggregatorInstance.eventEmitter.on("DealReceived", async (dealInfos) => {
-        // Process the dealInfos
-        let txID = dealInfos.txID
-        let dealIDs = dealInfos.dealID
-        let miners = dealInfos.miner
-        let inclusion_proof = dealInfos.inclusion_proof
-        let verifier_data = dealInfos.verifier_data
-        inclusion_proof.forEach((value, index) => {
-            inclusion_proof[index].proofIndex.index = "0x" + value.proofIndex.index
-            inclusion_proof[index].proofIndex.path.forEach((value, i) => {
-                inclusion_proof[index].proofIndex.path[i] = "0x" + value
-            })
-            inclusion_proof[index].proofSubtree.index = "0x" + value.proofSubtree.index
-            inclusion_proof[index].proofSubtree.path.forEach((value, i) => {
-                inclusion_proof[index].proofSubtree.path[i] = "0x" + value
-            })
-        })
-
-        verifier_data.forEach((value, index) => {
-            verifier_data[index].commPc = "0x" + value.commPc
-            verifier_data[index].sizePc = parseInt(value.sizePc, 16)
-        })
-        // console.log(verifier_data)
-        // let inclusionProof = {
-        //     proofIndex: {
-        //         index: "0x" + dealInfos.inclusion_proof.proofIndex.index,
-        //         path: dealInfos.inclusion_proof.proofIndex.path.map((value) => "0x" + value),
-        //     },
-        //     proofSubtree: {
-        //         index: "0x" + dealInfos.inclusion_proof.proofSubtree.index,
-        //         path: dealInfos.inclusion_proof.proofSubtree.path.map((value) => "0x" + value),
-        //     },
-        // }
-        // let verifierData = dealInfos.verifier_data
-        // verifierData.commPc = "0x" + verifierData.commPc
-        // // The size piece is originally in hex. Convert it to a number.
-        // verifierData.sizePc = parseInt(verifierData.sizePc, 16)
-        // Add on the dealInfos to the existing job stored inside the storedNodeJobs.
-        // storedNodeJobs.forEach((job) => {
-        //     if (job.txID === dealInfos.txID) {
-        //         job.dealInfos = dealInfos
-        //     }
-        // })
-        // saveJobsToState()
-        logger.info("Deal received with dealIds: " + JSON.stringify(dealIDs))
-        try {
-            // For each dealID, complete the deal
-            for (let i = 0; i < dealIDs.length; i++) {
-                // console.log("Completing deal with deal ID: ", dealIDs[i])
-                // console.log(`txID: Type - ${typeof txID}, Value - ${txID}`)
-                // console.log(`dealID: Type - ${typeof dealIDs[i]}, Value - ${dealIDs[i]}`)
-                // console.log(`miner: Type - ${typeof miners[i]}, Value - ${miners[i]}`)
-
-                // await dealStatus.complete(
-                //     txID,
-                //     dealIDs[i],
-                //     miners[i],
-                //     [
-                //         [
-                //             Number(inclusion_proof[i].proofIndex.index),
-                //             inclusion_proof[i].proofIndex.path,
-                //         ],
-                //         [
-                //             Number(inclusion_proof[i].proofSubtree.index),
-                //             inclusion_proof[i].proofSubtree.path,
-                //         ],
-                //     ],
-                //     [verifier_data[i].commPc, verifier_data[i].sizePc],
-                //     { gasLimit: ethers.utils.parseUnits("5000000", "wei") }
-                // )
-                logger.info("Deal completed for deal ID: " + dealIDs[i])
-            }
-        } catch (err) {
-            logger.error("Error submitting file for completion: " + err)
-        }
-    })
-
-    lighthouseAggregatorInstance.eventEmitter.on("Error", (error) => {
-        logger.error("An error occurred:" + error)
-    })
 }

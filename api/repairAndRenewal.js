@@ -1,15 +1,10 @@
 const { getDealInfo, getBlockNumber } = require("./lotusApi.js")
 const logger = require("./winston")
 const { getAllDeals, updateDeal, deleteDeal } = require("./db-operations/raas-deals")
-const {
-    getCidInfo,
-    updateCidRecord,
-    updateArrayInCidRecord,
-    doLastUpdate,
-} = require("./db-operations/raas-jobs")
+const { getCidInfo, updateCidRecordAll } = require("./db-operations/raas-jobs")
 
 async function executeRepairJobs() {
-    const REPAIR_EPOCHS = 1000 // Replace with the actual value
+    const REPAIR_EPOCHS = 5000 // Replace with the actual value
     const dealInfos = await getAllDeals()
     // Traverse through all the dealIds in dealNodeJobs
     for (const index in dealInfos) {
@@ -57,7 +52,7 @@ async function executeRenewalJobs() {
 
 async function needRenewal(dealId) {
     try {
-        const RENEWAL_EPOCHS = 1000 // Replace with the actual value
+        const RENEWAL_EPOCHS = 43200 // Replace with the actual value
         const dealInfo = await getDealInfo(Number(dealId))
         const blockNumber = await getBlockNumber()
         if (dealInfo.Proposal.EndEpoch - blockNumber < RENEWAL_EPOCHS) {
@@ -79,12 +74,26 @@ async function updateCidAfterDealExpiration(deal) {
                 cidInfo.miners.splice(i, 1)
             }
         }
+        const newCidInfo = {
+            cid: cidInfo.cid,
+            dealIDs: cidInfo.dealIDs,
+            miners: cidInfo.miners,
+            currentReplications: Number(cidInfo.currentReplications) - 1,
+
+            cidStatus: "incomplete",
+        }
+        await updateCidRecordAll(newCidInfo)
+        // await updateArrayInCidRecord(cidInfo.cid, "dealIDs", cidInfo.dealIDs)
+        // await updateArrayInCidRecord(cidInfo.cid, "miners", cidInfo.miners)
+        // await updateCidRecord(
+        //     cidInfo.cid,
+        //     "currentReplications",
+        //     Number(cidInfo.currentReplications) - 1
+        // )
+        // await updateCidRecord(cidInfo.cid, "cidStatus", "incomplete")
+        // await doLastUpdate(cidInfo.cid)
     }
-    await updateArrayInCidRecord(cidInfo.cid, "dealIDs", cidInfo.dealIDs)
-    await updateArrayInCidRecord(cidInfo.cid, "miners", cidInfo.miners)
-    await updateCidRecord(cidInfo.cid, "currentReplications", Number(cidInfo.replications - 1))
-    await updateCidRecord(cidInfo.cid, "cidStatus", "incomplete")
-    await doLastUpdate(cidInfo.cid)
 }
+
 // console.log(await needRenewal(164540))
 module.exports = { executeRepairJobs, executeRenewalJobs, needRenewal }
