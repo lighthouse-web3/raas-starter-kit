@@ -258,7 +258,7 @@ class LighthouseAggregator {
                             ],
                         ],
                         [verifier_data[i].commPc, verifier_data[i].sizePc],
-                        { gasLimit: ethers.utils.parseUnits("5000000", "wei") }
+                        { gasLimit: ethers.utils.parseUnits("10000000", "wei") }
                     )
                     logger.info("complete function called for deal ID: " + dealIDs[i])
                     // dealInfos.dealID.forEach(async (dealID, i) => {
