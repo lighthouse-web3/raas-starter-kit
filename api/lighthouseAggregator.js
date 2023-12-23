@@ -98,6 +98,7 @@ class LighthouseAggregator {
                 // Replace the t0 prefix with an empty string to get the address
                 miner: miner,
                 expirationEpoch: expirationEpoch,
+                replicationTarget: replicationTarget,
             }
             // console.log(dealInfos.dealID.length)
             if (
@@ -217,6 +218,7 @@ class LighthouseAggregator {
         let verifier_data = dealInfos.verifier_data
         let lighthouse_cid = dealInfos.cid
         let expirationEpoch = dealInfos.expirationEpoch
+        // let replicationTarget = dealInfos.replicationTarget
         inclusion_proof.forEach((value, index) => {
             inclusion_proof[index].proofIndex.index = "0x" + value.proofIndex.index
             inclusion_proof[index].proofIndex.path.forEach((value, i) => {
@@ -237,29 +239,29 @@ class LighthouseAggregator {
         try {
             // For each dealID, complete the deal
             for (let i = 0; i < dealIDs.length; i++) {
-                // console.log("Completing deal with deal ID: ", dealIDs[i])
-                // console.log(`txID: Type - ${typeof txID}, Value - ${txID}`)
-                // console.log(`dealID: Type - ${typeof dealIDs[i]}, Value - ${dealIDs[i]}`)
-                // console.log(`miner: Type - ${typeof miners[i]}, Value - ${miners[i]}`)
                 const dbDealInfo = await getDealbyId(Number(dealIDs[i]))
                 if (dbDealInfo == null || !dbDealInfo.cids.includes(lighthouse_cid)) {
-                    await dealStatus.complete(
+                    // console.log("params: ", JSON.stringify(params))
+                    // if (i <= replicationTarget) {
+                    const transaction = await dealStatus.complete(
                         txID,
                         dealIDs[i],
                         miners[i],
                         [
                             [
-                                Number(inclusion_proof[i].proofIndex.index),
-                                inclusion_proof[i].proofIndex.path,
-                            ],
-                            [
                                 Number(inclusion_proof[i].proofSubtree.index),
                                 inclusion_proof[i].proofSubtree.path,
+                            ],
+                            [
+                                Number(inclusion_proof[i].proofIndex.index),
+                                inclusion_proof[i].proofIndex.path,
                             ],
                         ],
                         [verifier_data[i].commPc, verifier_data[i].sizePc],
                         { gasLimit: ethers.utils.parseUnits("10000000000", "wei") }
                     )
+                    // }
+                    // await transaction.wait()
                     logger.info("complete function called for deal ID: " + dealIDs[i])
                     // dealInfos.dealID.forEach(async (dealID, i) => {
                     // const dealInfo = await getDealbyId(dealID)

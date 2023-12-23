@@ -14,7 +14,7 @@ const createDeal = async (record) => {
         }
         const command = new PutItemCommand(params)
         const response = await client.send(command)
-        logger.info("Created DealId ", record.dealId)
+        logger.info("Created DealId " + record.dealId)
         return "Put Successful"
     } catch (error) {
         console.log(error)
