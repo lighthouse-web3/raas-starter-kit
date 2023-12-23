@@ -95,7 +95,7 @@ const updateCidRecordAll = async (cidInfo) => {
             ExpressionAttributeValues: {
                 ":dealIDs": { L: cidInfo.dealIDs.map((item) => marshall(item)) },
                 ":miners": { L: cidInfo.miners.map((item) => marshall(item)) },
-                ":currentReplications": marshall(NumbercidInfo.currentReplications),
+                ":currentReplications": marshall(Number(cidInfo.currentReplications)),
                 ":cidStatus": marshall(cidInfo.cidStatus),
                 ":lastUpdate": marshall(Math.floor(Date.now() / 1000)),
             },
