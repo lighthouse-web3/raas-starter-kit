@@ -249,16 +249,16 @@ class LighthouseAggregator {
                     //     miners[i],
                     //     [
                     //         [
-                    //             Number(inclusion_proof[i].proofIndex.index),
-                    //             inclusion_proof[i].proofIndex.path,
-                    //         ],
-                    //         [
                     //             Number(inclusion_proof[i].proofSubtree.index),
                     //             inclusion_proof[i].proofSubtree.path,
                     //         ],
+                    //         [
+                    //             Number(inclusion_proof[i].proofIndex.index),
+                    //             inclusion_proof[i].proofIndex.path,
+                    //         ],
                     //     ],
                     //     [verifier_data[i].commPc, verifier_data[i].sizePc],
-                    //     { gasLimit: ethers.utils.parseUnits("5000000", "wei") }
+                    //     { gasLimit: ethers.utils.parseUnits("100000000", "wei") }
                     // )
                     // logger.info("complete function called for deal ID: " + dealIDs[i])
                     // dealInfos.dealID.forEach(async (dealID, i) => {
