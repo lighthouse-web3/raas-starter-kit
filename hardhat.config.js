@@ -10,16 +10,16 @@ module.exports = {
     solidity: {
         version: "0.8.17",
         settings: {
-          optimizer: {
-            enabled: true,
-            runs: 1000,
-            details: { yul: false },
-          },
+            optimizer: {
+                enabled: true,
+                runs: 1000,
+                details: { yul: false },
+            },
         },
-      },
-    defaultNetwork: "calibrationnet",
+    },
+    defaultNetwork: "filecoinmainnet",
     mocha: {
-        timeout: 100000000
+        timeout: 100000000,
     },
     networks: {
         localnet: {
