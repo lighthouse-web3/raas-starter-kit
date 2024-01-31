@@ -177,6 +177,8 @@ class LighthouseAggregator {
                     }
                     if (cidInfo.currentReplications >= _replication_target) {
                         await updateCidRecord(cidString, "cidStatus", "complete")
+                    } else if (cidInfo.ongoingReplications >= _replication_target) {
+                        await updateCidRecord(cidString, "cidStatus", "pending")
                     } else {
                         await updateCidRecord(cidString, "cidStatus", "incomplete")
                     }
