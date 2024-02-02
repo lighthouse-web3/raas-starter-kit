@@ -1,4 +1,4 @@
 const DealRecord = "testnet-raas-deals"
-const CidRecord = "testnet-raas-jobs"
+const CidRecord = "raas-testing"
 
 module.exports = { DealRecord, CidRecord }
