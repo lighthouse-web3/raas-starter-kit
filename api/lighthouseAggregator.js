@@ -6,14 +6,7 @@ const logger = require("./winston")
 const lighthouseDealDownloadEndpoint = process.env.LIGHTHOUSE_DEAL_DOWNLOAD_ENDPOINT
 const lighthouseDealInfosEndpoint = process.env.LIGHTHOUSE_DEAL_INFOS_ENDPOINT
 const { getDealInfo } = require("./lotusApi.js")
-const {
-    getCidInfo,
-    updateCidRecord,
-    createCidRecord,
-    updateCidRecordAll,
-} = require("./db-operations/raas-jobs")
-const { createDeal, getDealbyId, updateDeal } = require("./db-operations/raas-deals")
-const { needRenewal } = require("./repairAndRenewal")
+const { getCidInfo, updateCidRecord, createCidRecord } = require("./db-operations/raas-jobs")
 require("dotenv").config()
 
 const contractName = "DealStatus"
@@ -25,12 +18,7 @@ if (!lighthouseDealDownloadEndpoint) {
 /// A new aggregator implementation should be created for each aggregator contract
 class LighthouseAggregator {
     constructor() {
-        // Each job is an object with the following properties:
-        // txID: the transaction ID of the job
-        // cid: the CID of the file
-        // lighthouse_cid: the lighthouse CID of the file
         this.eventEmitter = new EventEmitter()
-        // Load previous app job state
 
         logger.info("Aggregator initialized, polling for deals...")
     }
@@ -69,8 +57,8 @@ class LighthouseAggregator {
                     try {
                         const dealInfo = await getDealInfo(Number(item.dealId))
 
-                        const x = await needRenewal(item.dealId)
-                        if (dealInfo && !x) {
+                        // const x = await needRenewal(item.dealId)
+                        if (dealInfo) {
                             dealIds.push(item.dealId)
                             inclusion_proof.push(item.proof.inclusionProof)
                             verifier_data.push(item.proof.verifierData)
@@ -101,48 +89,48 @@ class LighthouseAggregator {
                 replicationTarget: replicationTarget,
             }
             // console.log(dealInfos.dealID.length)
-            if (
-                dealInfos.dealID.length >= replicationTarget &&
-                dealInfos.dealID.length >= currentReplications
-            ) {
-                // console.log(replicationTarget, currentReplications, dealInfos.dealID.length)
-                const newCidInfo = {
-                    cid: lighthouse_cid,
-                    dealIDs: dealInfos.dealID,
-                    miners: dealInfos.miner,
-                    currentReplications: dealInfos.dealID.length,
+            // if (
+            //     dealInfos.dealID.length >= replicationTarget &&
+            //     dealInfos.dealID.length >= currentReplications
+            // ) {
+            //     // console.log(replicationTarget, currentReplications, dealInfos.dealID.length)
+            //     const newCidInfo = {
+            //         cid: lighthouse_cid,
+            //         dealIDs: dealInfos.dealID,
+            //         miners: dealInfos.miner,
+            //         currentReplications: dealInfos.dealID.length,
 
-                    cidStatus: "complete",
-                }
-                await updateCidRecordAll(newCidInfo)
-                // await updateCidRecord(
-                //     lighthouse_cid,
-                //     "currentReplications",
-                //     dealInfos.dealID.length
-                // )
-                // await updateArrayInCidRecord(lighthouse_cid, "dealIDs", dealInfos.dealID)
-                // await updateArrayInCidRecord(lighthouse_cid, "miners", dealInfos.miner)
-                // await updateCidRecord(lighthouse_cid, "cidStatus", "complete")
-                // await doLastUpdate(lighthouse_cid)
-            } else if (dealInfos.dealID.length > currentReplications) {
-                const newCidInfo = {
-                    cid: lighthouse_cid,
-                    dealIDs: dealInfos.dealID,
-                    miners: dealInfos.miner,
-                    currentReplications: dealInfos.dealID.length,
+            //         cidStatus: "complete",
+            //     }
+            //     await updateCidRecordAll(newCidInfo)
+            //     // await updateCidRecord(
+            //     //     lighthouse_cid,
+            //     //     "currentReplications",
+            //     //     dealInfos.dealID.length
+            //     // )
+            //     // await updateArrayInCidRecord(lighthouse_cid, "dealIDs", dealInfos.dealID)
+            //     // await updateArrayInCidRecord(lighthouse_cid, "miners", dealInfos.miner)
+            //     // await updateCidRecord(lighthouse_cid, "cidStatus", "complete")
+            //     // await doLastUpdate(lighthouse_cid)
+            // } else if (dealInfos.dealID.length > currentReplications) {
+            //     const newCidInfo = {
+            //         cid: lighthouse_cid,
+            //         dealIDs: dealInfos.dealID,
+            //         miners: dealInfos.miner,
+            //         currentReplications: dealInfos.dealID.length,
 
-                    cidStatus: "incomplete",
-                }
-                await updateCidRecordAll(newCidInfo)
-                // await updateCidRecord(
-                //     lighthouse_cid,
-                //     "currentReplications",
-                //     dealInfos.dealID.length
-                // )
-                // await updateArrayInCidRecord(lighthouse_cid, "dealIDs", dealInfos.dealID)
-                // await updateArrayInCidRecord(lighthouse_cid, "miners", dealInfos.miner)
-                // await doLastUpdate(lighthouse_cid)
-            } else return
+            //         cidStatus: "incomplete",
+            //     }
+            //     await updateCidRecordAll(newCidInfo)
+            //     // await updateCidRecord(
+            //     //     lighthouse_cid,
+            //     //     "currentReplications",
+            //     //     dealInfos.dealID.length
+            //     // )
+            //     // await updateArrayInCidRecord(lighthouse_cid, "dealIDs", dealInfos.dealID)
+            //     // await updateArrayInCidRecord(lighthouse_cid, "miners", dealInfos.miner)
+            //     // await doLastUpdate(lighthouse_cid)
+            // } else return
 
             // If we receive a nonzero dealID, emit the DealReceived event
             if (dealInfos.dealID[0] != null) {
@@ -176,7 +164,7 @@ class LighthouseAggregator {
                         await updateCidRecord(cidString, "replicationTarget", _replication_target)
                     }
                     if (cidInfo.currentReplications >= _replication_target) {
-                        await updateCidRecord(cidString, "cidStatus", "complete")
+                        await updateCidRecord(cidString, "cidStatus", "Complete")
                     } else if (cidInfo.ongoingReplications >= _replication_target) {
                         await updateCidRecord(cidString, "cidStatus", "pending")
                     } else {
@@ -189,8 +177,9 @@ class LighthouseAggregator {
                         dealIDs: [],
                         miners: [],
                         currentReplications: 0,
+                        ongoingReplications: 0,
                         replicationTarget: _replication_target,
-                        cidStatus: _replication_target === 0 ? "complete" : "incomplete",
+                        cidStatus: _replication_target === 0 ? "Complete" : "incomplete",
                     })
                 }
                 // await this.processDealInfos(18, 1000, lighthouseCID, transactionId)
@@ -241,8 +230,11 @@ class LighthouseAggregator {
         try {
             // For each dealID, complete the deal
             for (let i = 0; i < dealIDs.length; i++) {
-                const dbDealInfo = await getDealbyId(Number(dealIDs[i]))
-                if (dbDealInfo == null || !dbDealInfo.cids.includes(lighthouse_cid)) {
+                const cidDealInfo = await dealStatus.getAllDeals(
+                    ethers.utils.toUtf8Bytes(lighthouse_cid)
+                )
+                // const dbDealInfo = await getDealbyId(Number(dealIDs[i]))
+                if (!cidDealInfo.some((deal) => deal.dealId.toString() === dealIDs[i].toString())) {
                     // console.log("params: ", JSON.stringify(params))
                     // if (i <= replicationTarget) {
                     const transaction = await dealStatus.complete(
@@ -265,18 +257,6 @@ class LighthouseAggregator {
                     // }
                     // await transaction.wait()
                     logger.info("complete function called for deal ID: " + dealIDs[i])
-                    // dealInfos.dealID.forEach(async (dealID, i) => {
-                    // const dealInfo = await getDealbyId(dealID)
-                    if (dbDealInfo) {
-                        await updateDeal(dealIDs[i], lighthouse_cid)
-                    } else {
-                        await createDeal({
-                            dealId: dealIDs[i],
-                            cids: [lighthouse_cid],
-                            expirationEpoch: expirationEpoch[i],
-                        })
-                    }
-                    // })
                 }
             }
         } catch (err) {

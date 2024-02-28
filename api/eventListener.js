@@ -12,8 +12,8 @@ const contractName = "DealStatus"
 const contractInstance = process.env.DEAL_STATUS_ADDRESS // The user will also input
 const LighthouseAggregator = require("./lighthouseAggregator.js")
 const { executeRenewalJobs, executeRepairJobs } = require("./repairAndRenewal.js")
-const { getIncompleteOrPendingCidRecords } = require("./db-operations/raas-jobs")
 const logger = require("./winston")
+const getNonZeroTransactionIdRecords = require("./db-operations/raas-jobs/getNonZeroTransactionIdRecords.js")
 let lighthouseAggregatorInstance
 let isDealCreationListenerActive = false
 
@@ -28,25 +28,25 @@ app.listen(port, () => {
 
     console.log(`App started and is listening on port ${port}`)
     // console.log("Existing jobs on service node: ", storedNodeJobs)
-    // setInterval(async () => {
-    //     console.log("checking for deals")
-    //     const incompleteCidRecords = await getIncompleteOrPendingCidRecords()
-    //     console.log(incompleteCidRecords)
-    //     // return
-    //     incompleteCidRecords.forEach(async (job) => {
-    //         lighthouseAggregatorInstance.processDealInfos(
-    //             job.cid,
-    //             job.transactionId,
-    //             job.currentReplications,
-    //             job.replicationTarget
-    //         )
-    //     })
+    setInterval(async () => {
+        console.log("checking for deals")
+        const incompleteCidRecords = await getNonZeroTransactionIdRecords()
+        console.log(incompleteCidRecords)
+        // return
+        incompleteCidRecords.forEach(async (job) => {
+            lighthouseAggregatorInstance.processDealInfos(
+                job.cid,
+                job.transactionId,
+                job.currentReplications,
+                job.replicationTarget
+            )
+        })
 
-    //     setTimeout(async () => {
-    //         console.log("Executing jobs")
-    //         await executeRenewalJobs()
-    //     }, 300000)
-    // }, 600) // 10000 milliseconds = 10 seconds
+        //     setTimeout(async () => {
+        //         console.log("Executing jobs")
+        //         await executeRenewalJobs()
+        //     }, 300000)
+    }, 6000000) // 10000 milliseconds = 10 seconds
 
     // setInterval(async () => {
     //     console.log("executing repair jobs")

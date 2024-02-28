@@ -1,4 +1,4 @@
-const DealRecord = "testnet-raas-deals"
+const DealRecord = "deal-records"
 const CidRecord = "raas-testing"
-
-module.exports = { DealRecord, CidRecord }
+const AggregateRecord = "aggregate-file-records"
+module.exports = { DealRecord, CidRecord, AggregateRecord }

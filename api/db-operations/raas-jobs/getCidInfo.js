@@ -23,5 +23,4 @@ const getCid = async (cid) => {
         throw new Error()
     }
 }
-// getCid("QmRg11wLFicfJ8VTN4argvAmRFBLtCcsWJpu3mq8oiw9xA")
 module.exports = getCid
